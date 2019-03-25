@@ -2,7 +2,8 @@ import { NgModule } from '@angular/core';
 import { SharedModule } from '@shared/shared.module';
 import { RouterModule } from '@angular/router';
 
-import { HomePage } from './home.page';
+import { BoardModule } from '@app/board/board.module';
+import { GamePage } from './game.page';
 
 @NgModule({
   imports: [
@@ -10,10 +11,11 @@ import { HomePage } from './home.page';
     RouterModule.forChild([
       {
         path: '',
-        component: HomePage
+        component: GamePage
       }
-    ])
+    ]),
+    BoardModule
   ],
-  declarations: [HomePage]
+  declarations: [GamePage]
 })
-export class HomePageModule {}
+export class GameModule {}

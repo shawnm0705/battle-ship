@@ -2,7 +2,7 @@
   "name": "battle-ship",
   "version": "0.0.1",
   "author": "Shawn",
-  "homepage": "https://ionicframework.com/",
+  "homepage": "https://shawnm0705.github.io/battle-ship/",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
