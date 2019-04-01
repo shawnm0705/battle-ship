@@ -1,0 +1,10 @@
+<div class="border" text-center>
+  <div *ngFor="let x of rows" class="row">
+    <ng-container *ngFor="let y of columns">
+      <cell
+        (clickEvent)="onClick(x, y)"
+        [type]="status[x][y]"
+      ></cell>
+    </ng-container>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+.cell {
+  display: inline;
+}
+ion-button {
+  border: 2px solid var(--board-border-color);
+  width: var(--cell-size);
+  height: var(--cell-size);
+  box-sizing: border-box;
+  padding: 1px;
+  margin: 0;
+}
