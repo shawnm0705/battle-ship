@@ -1,7 +1,8 @@
-<div class="border" text-center>
+<div margin>
   <div *ngFor="let x of rows" class="row">
     <ng-container *ngFor="let y of columns">
       <cell
+        [disabled]="disabled"
         (clickEvent)="onClick(x, y)"
         [type]="status[x][y]"
       ></cell>

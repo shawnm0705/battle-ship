@@ -17,7 +17,7 @@ export class CellComponent {
     correct: 'success',
     wrong: 'primary-contrast',
     unknown: 'medium'
-  }
+  };
 
   constructor() {}
 
