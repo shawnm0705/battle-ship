@@ -171,7 +171,7 @@ export class GamePage {
     this.readyToStart = false;
     validShips.forEach(ship => {
       const index = this.ships.findIndex(currentShip => {
-        return currentShip.size === ship.length && !currentShip.done
+        return currentShip.size === ship.length && !currentShip.done;
       });
       if (index !== -1) {
         this.ships[index].done = true;
@@ -181,7 +181,7 @@ export class GamePage {
       return !v.done;
     }) && validShips.length === this.ships.length) {
       this.myShips = validShips.sort((a, b) => {
-        return b.length - a.length
+        return b.length - a.length;
       });
       this.readyToStart = true;
     }
@@ -189,8 +189,8 @@ export class GamePage {
 
   /**
    * Check if an position array includes the position passed in
-   * @param {Array<Array<number>>} positionArray [The position array]
-   * @param {Array<number>}        position      [The position to check]
+   * @param positionArray [The position array]
+   * @param position      [The position to check]
    */
   private _positionIncludes(positionArray: Array<Array<number>>, position: Array<number>) {
     let result = false;
