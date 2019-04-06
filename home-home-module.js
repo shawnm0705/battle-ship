@@ -4,46 +4,40 @@
 /*!*************************************!*\
   !*** ./src/app/home/home.module.ts ***!
   \*************************************/
-/*! exports provided: HomePageModule */
+/*! exports provided: HomeModule */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HomePageModule", function() { return HomePageModule; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "HomeModule", function() { return HomeModule; });
 /* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! tslib */ "./node_modules/tslib/tslib.es6.js");
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
-/* harmony import */ var _angular_common__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/common */ "./node_modules/@angular/common/fesm5/common.js");
-/* harmony import */ var _ionic_angular__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @ionic/angular */ "./node_modules/@ionic/angular/dist/fesm5.js");
-/* harmony import */ var _angular_forms__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/forms */ "./node_modules/@angular/forms/fesm5/forms.js");
-/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
-/* harmony import */ var _home_page__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./home.page */ "./src/app/home/home.page.ts");
+/* harmony import */ var _shared_shared_module__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @shared/shared.module */ "./src/app/shared/shared.module.ts");
+/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
+/* harmony import */ var _home_page__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./home.page */ "./src/app/home/home.page.ts");
 
 
 
 
 
-
-
-var HomePageModule = /** @class */ (function () {
-    function HomePageModule() {
+var HomeModule = /** @class */ (function () {
+    function HomeModule() {
     }
-    HomePageModule = tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"]([
+    HomeModule = tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"]([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["NgModule"])({
             imports: [
-                _angular_common__WEBPACK_IMPORTED_MODULE_2__["CommonModule"],
-                _angular_forms__WEBPACK_IMPORTED_MODULE_4__["FormsModule"],
-                _ionic_angular__WEBPACK_IMPORTED_MODULE_3__["IonicModule"],
-                _angular_router__WEBPACK_IMPORTED_MODULE_5__["RouterModule"].forChild([
+                _shared_shared_module__WEBPACK_IMPORTED_MODULE_2__["SharedModule"],
+                _angular_router__WEBPACK_IMPORTED_MODULE_3__["RouterModule"].forChild([
                     {
                         path: '',
-                        component: _home_page__WEBPACK_IMPORTED_MODULE_6__["HomePage"]
+                        component: _home_page__WEBPACK_IMPORTED_MODULE_4__["HomePage"]
                     }
                 ])
             ],
-            declarations: [_home_page__WEBPACK_IMPORTED_MODULE_6__["HomePage"]]
+            declarations: [_home_page__WEBPACK_IMPORTED_MODULE_4__["HomePage"]]
         })
-    ], HomePageModule);
-    return HomePageModule;
+    ], HomeModule);
+    return HomeModule;
 }());
 
 
@@ -57,7 +51,7 @@ var HomePageModule = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<ion-header>\n  <ion-toolbar>\n    <ion-title>\n      Ionic Blank\n    </ion-title>\n  </ion-toolbar>\n</ion-header>\n\n<ion-content>\n  <div class=\"ion-padding\">\n    The world is your oyster.\n    <p>If you get lost, the <a target=\"_blank\" rel=\"noopener\" href=\"https://ionicframework.com/docs/\">docs</a> will be your guide.</p>\n  </div>\n</ion-content>\n"
+module.exports = "<ion-content text-center>\n  <h1>Battle Ship Game</h1>\n  <ion-button shape=\"round\" color=\"primary\" routerLink=\"/game\">\n    Start Game\n  </ion-button>\n</ion-content>\n"
 
 /***/ }),
 
@@ -91,7 +85,7 @@ var HomePage = /** @class */ (function () {
     }
     HomePage = tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"]([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["Component"])({
-            selector: 'app-home',
+            selector: 'home',
             template: __webpack_require__(/*! ./home.page.html */ "./src/app/home/home.page.html"),
             styles: [__webpack_require__(/*! ./home.page.scss */ "./src/app/home/home.page.scss")]
         })
