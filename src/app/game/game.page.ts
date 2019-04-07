@@ -11,6 +11,9 @@ type Ship = Array<Position>;
 })
 export class GamePage {
   state = 'setting';
+  gameOver = false;
+  myTurn = true;
+  winMsg = '';
   // ship positions on the board
   myShipsPosition: Array<Array<boolean>>;
   opponentShipsPosition: Array<Array<boolean>>;
@@ -55,7 +58,13 @@ export class GamePage {
   ];
 
   constructor() {
-    // initialisations
+    this._initialise();
+  }
+
+  private _initialise() {
+    this.state = 'setting';
+    this.gameOver = false;
+    this.myTurn = true;
     this.myShipsPosition = [];
     this.opponentShipsPosition = [];
     this.myShips = [];
@@ -63,17 +72,26 @@ export class GamePage {
     this.markedPositions = [];
     this.myBoardStatus = [];
     this.opponentBoardStatus = [];
+    this.readyToStart = false;
+    this.ships = this.ships.map(ship => {
+      ship.done = false;
+      return ship;
+    })
     for (let i = 0; i < 10; i ++) {
-      const shipsInit = [];
-      const statusInit = [];
+      const myShipsInit = [];
+      const oppnentShipsInit = [];
+      const myStatusInit = [];
+      const oppnentStatusInit = [];
       for (let j = 0; j < 10; j ++) {
-        shipsInit.push(false);
-        statusInit.push('unknown');
+        myShipsInit.push(false);
+        oppnentShipsInit.push(false);
+        myStatusInit.push('unknown');
+        oppnentStatusInit.push('unknown');
       }
-      this.myShipsPosition.push(shipsInit);
-      this.opponentShipsPosition.push(shipsInit);
-      this.myBoardStatus.push(statusInit);
-      this.opponentBoardStatus.push(statusInit);
+      this.myShipsPosition.push(myShipsInit);
+      this.opponentShipsPosition.push(oppnentShipsInit);
+      this.myBoardStatus.push(myStatusInit);
+      this.opponentBoardStatus.push(oppnentStatusInit);
     }
   }
 
@@ -81,8 +99,8 @@ export class GamePage {
    * Triggered for each user move(click)
    * @param position [The position of this move(click)]
    */
-  step(position: {x: number; y: number}) {
-    const {x, y} = position;
+  step(position: Position) {
+    const [x, y] = position;
     switch (this.state) {
       case 'setting':
         this.myShipsPosition[x][y] = !this.myShipsPosition[x][y];
@@ -101,6 +119,23 @@ export class GamePage {
         this._checkSetUpStatus();
         break;
 
+      case 'playing':
+        // clicking on a known position doesn't do anything
+        if (this.opponentBoardStatus[x][y] !== 'unknown') {
+          return;
+        }
+        this.opponentBoardStatus[x][y] = this.opponentShipsPosition[x][y] ? 'correct' : 'wrong';
+        this.myTurn = false;
+        this._checkOpponentBoard();
+        if (this.gameOver) {
+          return;
+        }
+        this._opponentMove();
+        this._checkMyBoard();
+        if (!this.gameOver) {
+          this.myTurn = true;
+        }
+        break;
     }
   }
 
@@ -116,6 +151,99 @@ export class GamePage {
       });
     });
     this.state = 'playing';
+  }
+
+  /**
+   * Check if this ship sunk
+   * @param owner [opponent or me]
+   * @param index [which ship is checked]
+   */
+  isShipSunk(owner: string, index: number) {
+    let ship: Ship;
+    let board;
+    if (owner === 'opponent') {
+      ship = this.opponentShips[index];
+      board = this.opponentBoardStatus;
+    }
+    if (owner === 'me') {
+      ship = this.myShips[index];
+      board = this.myBoardStatus;
+    }
+    return ship.findIndex(position => {
+      return board[position[0]][position[1]] !== 'correct';
+    }) === -1;
+  }
+
+  /**
+   * The AI move
+   */
+  private _opponentMove() {
+    let movePosition: Position;
+    // in case it goes to infinit loop
+    let forceStop = false;
+    const timeout = setTimeout(() => {
+      forceStop = true;
+    }, 3000);
+    do {
+      // randomly pick one position -- easy mode, will create harder mode AI later
+      movePosition = this._randomPosition();
+    } while (!this._validateOpponentMove(movePosition) && !forceStop);
+    clearTimeout(timeout);
+    this.myBoardStatus[movePosition[0]][movePosition[1]] = this.myShipsPosition[movePosition[0]][movePosition[1]] ? 'correct' : 'wrong';
+  }
+
+  /**
+   * Check if this move is valid
+   * @param position [the move position]
+   */
+  private _validateOpponentMove(position: Position) {
+    if (this.myBoardStatus[position[0]][position[1]] !== 'unknown') {
+      return false;
+    }
+    return true;
+  }
+
+  private _checkOpponentBoard() {
+    for (let i = 0; i < this.ships.length; i++) {
+      if (!this.isShipSunk('opponent', i)) {
+        return;
+      }
+    }
+    this.winMsg = 'You Win ^_^';
+    this._gameOver();
+  }
+
+  private _checkMyBoard() {
+    for (let i = 0; i < this.ships.length; i++) {
+      if (!this.isShipSunk('me', i)) {
+        return;
+      }
+    }
+    this.winMsg = 'You Lose :(';
+    this._gameOver();
+  }
+
+  private _gameOver() {
+    this.myTurn = false;
+    this.gameOver = true;
+    this.myBoardStatus = this._showResult(this.myBoardStatus, this.myShipsPosition);
+    this.opponentBoardStatus = this._showResult(this.opponentBoardStatus, this.opponentShipsPosition);
+  }
+
+  /**
+   * Show result of not found ships
+   * @param board [Board status]
+   * @param ships [Ship positions]
+   */
+  private _showResult(board, ships) {
+    return board.map((row, x) => {
+      return row.map((status, y) => {
+        if (status === 'unknown' && ships[x][y]) {
+          return 'result';
+        }
+        return status;
+      });
+    });
   }
 
   /**
@@ -207,11 +335,12 @@ export class GamePage {
   private _createAIBoard() {
     this.ships.forEach(ship => {
       let valid = false;
-      // incase it goes to infinte loop
+      let forceEnd = false;
+      // in case it goes to infinte loop
       setTimeout(() => {
-        valid = true;
+        forceEnd = true;
       }, 5000);
-      while (!valid) {
+      while (!valid && !forceEnd) {
         valid = this._validateShip(ship.size, this._randomPosition(), this._randomBoolean());
       }
     });

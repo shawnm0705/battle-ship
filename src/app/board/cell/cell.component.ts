@@ -16,7 +16,8 @@ export class CellComponent {
   colors = {
     correct: 'success',
     wrong: 'primary-contrast',
-    unknown: 'medium'
+    unknown: 'medium',
+    result: 'primary'
   };
 
   constructor() {}
