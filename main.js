@@ -1072,15 +1072,8 @@ var BoardComponent = /** @class */ (function () {
         this.step = new _angular_core__WEBPACK_IMPORTED_MODULE_1__["EventEmitter"]();
     }
     BoardComponent.prototype.onClick = function (x, y) {
-        this.step.emit({
-            x: x,
-            y: y
-        });
+        this.step.emit([x, y]);
     };
-    tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"]([
-        Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["Input"])(),
-        tslib__WEBPACK_IMPORTED_MODULE_0__["__metadata"]("design:type", String)
-    ], BoardComponent.prototype, "type", void 0);
     tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"]([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["Input"])(),
         tslib__WEBPACK_IMPORTED_MODULE_0__["__metadata"]("design:type", Object)
@@ -1199,7 +1192,8 @@ var CellComponent = /** @class */ (function () {
         this.colors = {
             correct: 'success',
             wrong: 'primary-contrast',
-            unknown: 'medium'
+            unknown: 'medium',
+            result: 'primary'
         };
     }
     CellComponent.prototype.onClick = function () {
@@ -1289,7 +1283,7 @@ var GameModule = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<ion-content>\n  <ng-container [ngSwitch]=\"state\">\n\n    <div text-center *ngSwitchCase=\"'setting'\">\n      <h2>Set up your board</h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size-md=\"4\" size-xs=\"12\">\n            <h4>Ships that you need to put in your board:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let i = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"ship.done\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n          <ion-col size-md=\"8\" size-xs=\"12\">\n            <h4>Your Board</h4>\n            <board type=\"setting\" [status]=\"myBoardStatus\" (step)=\"step($event)\"></board>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"start()\" [disabled]=\"!readyToStart\">Start</ion-button>\n    </div>\n\n    <div text-center *ngSwitchCase=\"'playing'\">\n    </div>\n\n  </ng-container>\n</ion-content>"
+module.exports = "<ion-content>\n  <ng-container [ngSwitch]=\"state\">\n\n    <div text-center *ngSwitchCase=\"'setting'\">\n      <h2>Set up your board</h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size-md=\"4\" size-xs=\"12\">\n            <h4>Ships that you need to put in your board:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"ship.done\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n          <ion-col size-md=\"8\" size-xs=\"12\">\n            <h4>Your Board</h4>\n            <board [status]=\"myBoardStatus\" (step)=\"step($event)\"></board>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"start()\" [disabled]=\"!readyToStart\">Start</ion-button>\n    </div>\n\n    <div text-center *ngSwitchCase=\"'playing'\">\n      <h2>\n        <ng-container *ngIf=\"!gameOver\">Playing...</ng-container>\n        <ng-container *ngIf=\"gameOver\">{{ winMsg }}</ng-container>\n      </h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size=6>\n            <h4>AI's Board</h4>\n            <board [status]=\"opponentBoardStatus\" (step)=\"step($event)\" [disabled]=\"!myTurn\"></board>\n            <h4>Ships:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let i = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"isShipSunk('opponent', i)\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n          <ion-col size=6>\n            <h4>Your Board</h4>\n            <board [status]=\"myBoardStatus\" [disabled]=true></board>\n            <h4>Ships:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let j = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"isShipSunk('me', j)\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"restart()\" *ngIf=\"gameOver\">Re-start</ion-button>\n    </div>\n\n  </ng-container>\n\n</ion-content>"
 
 /***/ }),
 
@@ -1321,6 +1315,9 @@ __webpack_require__.r(__webpack_exports__);
 var GamePage = /** @class */ (function () {
     function GamePage() {
         this.state = 'setting';
+        this.gameOver = false;
+        this.myTurn = true;
+        this.winMsg = '';
         this.readyToStart = false;
         this.ships = [
             {
@@ -1349,30 +1346,47 @@ var GamePage = /** @class */ (function () {
                 done: false
             }
         ];
+        this._initialise();
+    }
+    GamePage.prototype._initialise = function () {
+        this.state = 'setting';
+        this.gameOver = false;
+        this.myTurn = true;
         this.myShipsPosition = [];
         this.opponentShipsPosition = [];
+        this.myShips = [];
+        this.opponentShips = [];
         this.markedPositions = [];
         this.myBoardStatus = [];
         this.opponentBoardStatus = [];
+        this.readyToStart = false;
+        this.ships = this.ships.map(function (ship) {
+            ship.done = false;
+            return ship;
+        });
         for (var i = 0; i < 10; i++) {
-            var shipsInit = [];
-            var statusInit = [];
+            var myShipsInit = [];
+            var oppnentShipsInit = [];
+            var myStatusInit = [];
+            var oppnentStatusInit = [];
             for (var j = 0; j < 10; j++) {
-                shipsInit.push(false);
-                statusInit.push('unknown');
+                myShipsInit.push(false);
+                oppnentShipsInit.push(false);
+                myStatusInit.push('unknown');
+                oppnentStatusInit.push('unknown');
             }
-            this.myShipsPosition.push(shipsInit);
-            this.opponentShipsPosition.push(shipsInit);
-            this.myBoardStatus.push(statusInit);
-            this.opponentBoardStatus.push(statusInit);
+            this.myShipsPosition.push(myShipsInit);
+            this.opponentShipsPosition.push(oppnentShipsInit);
+            this.myBoardStatus.push(myStatusInit);
+            this.opponentBoardStatus.push(oppnentStatusInit);
         }
-    }
+    };
     /**
      * Triggered for each user move(click)
      * @param position [The position of this move(click)]
      */
     GamePage.prototype.step = function (position) {
-        var x = position.x, y = position.y;
+        var x = position[0], y = position[1];
         switch (this.state) {
             case 'setting':
                 this.myShipsPosition[x][y] = !this.myShipsPosition[x][y];
@@ -1391,13 +1405,129 @@ var GamePage = /** @class */ (function () {
                 }
                 this._checkSetUpStatus();
                 break;
+            case 'playing':
+                // clicking on a known position doesn't do anything
+                if (this.opponentBoardStatus[x][y] !== 'unknown') {
+                    return;
+                }
+                this.opponentBoardStatus[x][y] = this.opponentShipsPosition[x][y] ? 'correct' : 'wrong';
+                this.myTurn = false;
+                this._checkOpponentBoard();
+                if (this.gameOver) {
+                    return;
+                }
+                this._opponentMove();
+                this._checkMyBoard();
+                if (!this.gameOver) {
+                    this.myTurn = true;
+                }
+                break;
         }
     };
     /**
      * Start the game after setting up my board
      */
     GamePage.prototype.start = function () {
+        this._createAIBoard();
+        // initialise my board
+        this.myBoardStatus = this.myBoardStatus.map(function (row) {
+            return row.map(function (column) {
+                return 'unknown';
+            });
+        });
         this.state = 'playing';
+    };
+    /**
+     * Restart a new game
+     */
+    GamePage.prototype.restart = function () {
+        this._initialise();
+    };
+    /**
+     * Check if this ship sunk
+     * @param owner [opponent or me]
+     * @param index [which ship is checked]
+     */
+    GamePage.prototype.isShipSunk = function (owner, index) {
+        var ship;
+        var board;
+        if (owner === 'opponent') {
+            ship = this.opponentShips[index];
+            board = this.opponentBoardStatus;
+        }
+        if (owner === 'me') {
+            ship = this.myShips[index];
+            board = this.myBoardStatus;
+        }
+        return ship.findIndex(function (position) {
+            return board[position[0]][position[1]] !== 'correct';
+        }) === -1;
+    };
+    /**
+     * The AI move
+     */
+    GamePage.prototype._opponentMove = function () {
+        var movePosition;
+        // in case it goes to infinit loop
+        var forceStop = false;
+        var timeout = setTimeout(function () {
+            forceStop = true;
+        }, 3000);
+        do {
+            // randomly pick one position -- easy mode, will create harder mode AI later
+            movePosition = this._randomPosition();
+        } while (!this._validateOpponentMove(movePosition) && !forceStop);
+        clearTimeout(timeout);
+        this.myBoardStatus[movePosition[0]][movePosition[1]] = this.myShipsPosition[movePosition[0]][movePosition[1]] ? 'correct' : 'wrong';
+    };
+    /**
+     * Check if this move is valid
+     * @param position [the move position]
+     */
+    GamePage.prototype._validateOpponentMove = function (position) {
+        if (this.myBoardStatus[position[0]][position[1]] !== 'unknown') {
+            return false;
+        }
+        return true;
+    };
+    GamePage.prototype._checkOpponentBoard = function () {
+        for (var i = 0; i < this.ships.length; i++) {
+            if (!this.isShipSunk('opponent', i)) {
+                return;
+            }
+        }
+        this.winMsg = 'You Win ^_^';
+        this._gameOver();
+    };
+    GamePage.prototype._checkMyBoard = function () {
+        for (var i = 0; i < this.ships.length; i++) {
+            if (!this.isShipSunk('me', i)) {
+                return;
+            }
+        }
+        this.winMsg = 'You Lose :(';
+        this._gameOver();
+    };
+    GamePage.prototype._gameOver = function () {
+        this.myTurn = false;
+        this.gameOver = true;
+        this.myBoardStatus = this._showResult(this.myBoardStatus, this.myShipsPosition);
+        this.opponentBoardStatus = this._showResult(this.opponentBoardStatus, this.opponentShipsPosition);
+    };
+    /**
+     * Show result of not found ships
+     * @param board [Board status]
+     * @param ships [Ship positions]
+     */
+    GamePage.prototype._showResult = function (board, ships) {
+        return board.map(function (row, x) {
+            return row.map(function (status, y) {
+                if (status === 'unknown' && ships[x][y]) {
+                    return 'result';
+                }
+                return status;
+            });
+        });
     };
     /**
      * Check if any ships are completed and if it is ready to start the game
@@ -1483,6 +1613,98 @@ var GamePage = /** @class */ (function () {
         }
     };
     /**
+     * Create the AI's game board with ships
+     */
+    GamePage.prototype._createAIBoard = function () {
+        var _this = this;
+        this.ships.forEach(function (ship) {
+            var valid = false;
+            var forceEnd = false;
+            // in case it goes to infinte loop
+            setTimeout(function () {
+                forceEnd = true;
+            }, 5000);
+            while (!valid && !forceEnd) {
+                valid = _this._validateShip(ship.size, _this._randomPosition(), _this._randomBoolean());
+            }
+        });
+    };
+    GamePage.prototype._validateShip = function (size, start, isVertical) {
+        var _this = this;
+        var ship = [];
+        var x = start[0], y = start[1];
+        var end = [start[0] + size - 1, start[1]];
+        if (isVertical) {
+            end = [start[0], start[1] + size - 1];
+        }
+        // ship body should be inside the board
+        if (!this._validatePosition(end)) {
+            return false;
+        }
+        // check if the ship body and ship surrounded positions are taken
+        for (var i = -1; i < size + 1; i++) {
+            var position = [x + i, y];
+            if (isVertical) {
+                position = [x, y + i];
+            }
+            // don't need to check the position outside of the board
+            // this will only happen for the position i = -1 / i = size
+            if (!this._validatePosition(position)) {
+                continue;
+            }
+            if (this.opponentShipsPosition[position[0]][position[1]]) {
+                return false;
+            }
+            // don't need to check left(top)/right(bottom) for i = -1 and i = size
+            if (i < 0 || i >= size) {
+                continue;
+            }
+            // check the left/top and right/bottom of this position
+            // left or top
+            var left = [x + i, y - 1];
+            // right or bottom
+            var right = [x + i, y + 1];
+            if (isVertical) {
+                left = [x - 1, y + i];
+                right = [x + 1, y + i];
+            }
+            if (this._validatePosition(left)) {
+                if (this.opponentShipsPosition[left[0]][left[1]]) {
+                    return false;
+                }
+            }
+            if (this._validatePosition(right)) {
+                if (this.opponentShipsPosition[right[0]][right[1]]) {
+                    return false;
+                }
+            }
+            ship.push(position);
+        }
+        this.opponentShips.push(ship);
+        ship.forEach(function (position) {
+            _this.opponentShipsPosition[position[0]][position[1]] = true;
+        });
+        return true;
+    };
+    /**
+     * Get a random position
+     */
+    GamePage.prototype._randomPosition = function () {
+        return [Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)];
+    };
+    /**
+     * A random boolean choice
+     */
+    GamePage.prototype._randomBoolean = function () {
+        return Math.random() < 0.5;
+    };
+    GamePage.prototype._validatePosition = function (position) {
+        if (position[0] < 0 || position[0] > 9 || position[1] < 0 || position[1] > 9) {
+            return false;
+        }
+        return true;
+    };
+    /**
      * Check if an position array includes the position passed in
      * @param positionArray [The position array]
      * @param position      [The position to check]
@@ -1495,6 +1717,15 @@ var GamePage = /** @class */ (function () {
             }
         });
         return result;
+    };
+    GamePage.prototype.test = function () {
+        var _this = this;
+        this._createAIBoard();
+        this.opponentShips.forEach(function (ship) {
+            ship.forEach(function (position) {
+                _this.myBoardStatus[position[0]][position[1]] = 'correct';
+            });
+        });
     };
     GamePage = tslib__WEBPACK_IMPORTED_MODULE_0__["__decorate"]([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_1__["Component"])({
