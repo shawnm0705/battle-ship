@@ -154,6 +154,13 @@ export class GamePage {
   }
 
   /**
+   * Restart a new game
+   */
+  restart() {
+    this._initialise();
+  }
+
+  /**
    * Check if this ship sunk
    * @param owner [opponent or me]
    * @param index [which ship is checked]
