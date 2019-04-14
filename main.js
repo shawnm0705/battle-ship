@@ -1283,7 +1283,7 @@ var GameModule = /** @class */ (function () {
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<ion-content>\n  <ng-container [ngSwitch]=\"state\">\n\n    <div text-center *ngSwitchCase=\"'setting'\">\n      <h2>Set up your board</h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size-md=\"4\" size-xs=\"12\">\n            <h4>Ships that you need to put in your board:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"ship.done\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n          <ion-col size-md=\"8\" size-xs=\"12\">\n            <h4>Your Board</h4>\n            <board [status]=\"myBoardStatus\" (step)=\"step($event)\"></board>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"start()\" [disabled]=\"!readyToStart\">Start</ion-button>\n    </div>\n\n    <div text-center *ngSwitchCase=\"'playing'\">\n      <h2>\n        <ng-container *ngIf=\"!gameOver\">Playing...</ng-container>\n        <ng-container *ngIf=\"gameOver\">{{ winMsg }}</ng-container>\n      </h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size=6>\n            <h4>AI's Board</h4>\n            <board [status]=\"opponentBoardStatus\" (step)=\"step($event)\" [disabled]=\"!myTurn\"></board>\n            <h4>Ships:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let i = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"isShipSunk('opponent', i)\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n          <ion-col size=6>\n            <h4>Your Board</h4>\n            <board [status]=\"myBoardStatus\" [disabled]=true></board>\n            <h4>Ships:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let j = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"isShipSunk('me', j)\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"restart()\" *ngIf=\"gameOver\">Re-start</ion-button>\n    </div>\n\n  </ng-container>\n\n</ion-content>"
+module.exports = "<ion-content>\n  <ng-container [ngSwitch]=\"state\">\n\n    <div text-center *ngSwitchCase=\"'setting'\">\n      <h2>Set up your board</h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size-md=\"4\" size-xs=\"12\">\n            <h4>Ships that you need to put in your board:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"ship.done\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n            <ion-button shape=\"round\" expand=\"full\" margin (click)=\"autoSetup()\">Auto Set up</ion-button>\n          </ion-col>\n          <ion-col size-md=\"8\" size-xs=\"12\">\n            <h4>Your Board</h4>\n            <board [status]=\"myBoardStatus\" (step)=\"step($event)\"></board>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"start()\" [disabled]=\"!readyToStart\">Start</ion-button>\n    </div>\n\n    <div text-center *ngSwitchCase=\"'playing'\">\n      <h2>\n        <ng-container *ngIf=\"!gameOver\">Playing...</ng-container>\n        <ng-container *ngIf=\"gameOver\">{{ winMsg }}</ng-container>\n      </h2>\n      <ion-grid>\n        <ion-row>\n          <ion-col size=6>\n            <h4>AI's Board</h4>\n            <board [status]=\"opponentBoardStatus\" (step)=\"step($event)\" [disabled]=\"!myTurn\"></board>\n            <h4>Ships:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let i = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"isShipSunk('opponent', i)\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n          <ion-col size=6>\n            <h4>Your Board</h4>\n            <board [status]=\"myBoardStatus\" [disabled]=true></board>\n            <h4>Ships:</h4>\n            <ion-list>\n              <ion-item *ngFor=\"let ship of ships; let j = index\">\n                {{ ship.name }} (size {{ ship.size }})\n                <ion-icon *ngIf=\"isShipSunk('me', j)\" name=\"checkmark-circle-outline\" color=\"success\" margin-start></ion-icon>\n              </ion-item>\n            </ion-list>\n          </ion-col>\n        </ion-row>\n      </ion-grid>\n      <ion-button shape=\"round\" expand=\"full\" margin (click)=\"restart()\" *ngIf=\"gameOver\">Re-start</ion-button>\n    </div>\n\n  </ng-container>\n\n</ion-content>"
 
 /***/ }),
 
@@ -1425,10 +1425,25 @@ var GamePage = /** @class */ (function () {
         }
     };
     /**
+     * Automatically set up my board
+     */
+    GamePage.prototype.autoSetup = function () {
+        var _this = this;
+        this._initialise();
+        this._autoSetupBoard(true);
+        // display board status
+        this.myBoardStatus = this.myBoardStatus.map(function (row, x) {
+            return row.map(function (column, y) {
+                return _this.myShipsPosition[x][y] ? 'correct' : 'unknown';
+            });
+        });
+        this.readyToStart = true;
+    };
+    /**
      * Start the game after setting up my board
      */
     GamePage.prototype.start = function () {
-        this._createAIBoard();
+        this._autoSetupBoard();
         // initialise my board
         this.myBoardStatus = this.myBoardStatus.map(function (row) {
             return row.map(function (column) {
@@ -1468,27 +1483,194 @@ var GamePage = /** @class */ (function () {
      */
     GamePage.prototype._opponentMove = function () {
         var movePosition;
-        // in case it goes to infinit loop
-        var forceStop = false;
-        var timeout = setTimeout(function () {
-            forceStop = true;
-        }, 3000);
-        do {
-            // randomly pick one position -- easy mode, will create harder mode AI later
-            movePosition = this._randomPosition();
-        } while (!this._validateOpponentMove(movePosition) && !forceStop);
-        clearTimeout(timeout);
+        movePosition = this._smartMove();
+        if (!movePosition) {
+            // pick a random position if there's no smarter move
+            // try maximum 1000 times
+            for (var i = 0; i < 1000; i++) {
+                movePosition = this._randomPosition();
+                if (this._validateOpponentMove(movePosition)) {
+                    break;
+                }
+            }
+        }
         this.myBoardStatus[movePosition[0]][movePosition[1]] = this.myShipsPosition[movePosition[0]][movePosition[1]] ? 'correct' : 'wrong';
     };
     /**
-     * Check if this move is valid
-     * @param position [the move position]
+     * A smart move for AI
+     * If there's an unsunk ship, try to sink this ship first
      */
-    GamePage.prototype._validateOpponentMove = function (position) {
+    GamePage.prototype._smartMove = function () {
+        var _this = this;
+        // get all marked positions from my board
+        var markedPositions = [];
+        this.myBoardStatus.forEach(function (row, x) {
+            row.forEach(function (status, y) {
+                if (status === 'correct') {
+                    markedPositions.push([x, y]);
+                }
+            });
+        });
+        // get "ships"(may not be a full ship) from marked positions
+        var ships = this._getShipsFromPositions(markedPositions);
+        // AI will finish this ship first
+        var targetShip;
+        ships.forEach(function (ship) {
+            // find which ship these positions belong to
+            var correctShip = _this.myShips.find(function (eachShip) {
+                return _this._positionIncludes(eachShip, ship[0]);
+            });
+            if (ship.length === correctShip.length) {
+                // this ship is finished
+                return;
+            }
+            targetShip = ship;
+        });
+        // if there's no ship that is not finished, no smart move needed
+        if (!targetShip) {
+            return null;
+        }
+        // get the size of the target ship that is not sunk
+        var targetShipSize = 0;
+        for (var i = this.ships.length - 1; i >= 0; i--) {
+            if (!this.isShipSunk('me', i) && this.ships[i].size > targetShip.length) {
+                targetShipSize = this.ships[i].size;
+                break;
+            }
+        }
+        // if this next ship is just a single position, need to guess if the ship is horizontal or vertical
+        if (targetShip.length === 1) {
+            return this._nextMoveFromSinglePosition(targetShip[0], targetShipSize);
+        }
+        return this._nextMoveFromPartialShip(targetShip);
+    };
+    /**
+     * Get the next move position from a ship that has only one position available yet
+     * @param position The position that is available
+     * @param shipSize The guessed ship size
+     */
+    GamePage.prototype._nextMoveFromSinglePosition = function (position, shipSize) {
+        // the position of this ship
+        var x = position[0], y = position[1];
+        var leftMax, rightMax, topMax, bottomMax;
+        // get the top max position
+        for (var i = 1; i < 10; i++) {
+            if (!this._validateOpponentMove([x - i, y], [x - i + 1, y])) {
+                topMax = x - i + 1;
+                break;
+            }
+        }
+        // the top of the current position is able to form the ship
+        if (x - topMax + 1 >= shipSize) {
+            return [x - 1, y];
+        }
+        // get the bottom max position
+        for (var i = 1; i < 10; i++) {
+            if (!this._validateOpponentMove([x + i, y], [x + i - 1, y])) {
+                bottomMax = x + i - 1;
+                break;
+            }
+        }
+        // it is able to form the ship vertically
+        if (bottomMax - topMax + 1 >= shipSize) {
+            return [x + 1, y];
+        }
+        // get the left max position
+        for (var i = 1; i < 10; i++) {
+            if (!this._validateOpponentMove([x, y - i], [x, y - i + 1])) {
+                leftMax = y - i + 1;
+                break;
+            }
+        }
+        // the left of the current position is able to form the ship
+        if (y - leftMax + 1 >= shipSize) {
+            return [x, y - 1];
+        }
+        // get the right max position
+        for (var i = 1; i < 10; i++) {
+            if (!this._validateOpponentMove([x, y + i], [x, y + i - 1])) {
+                rightMax = y + i - 1;
+                break;
+            }
+        }
+        // it is able to form the ship horizontally
+        if (rightMax - leftMax + 1 >= shipSize) {
+            return [x, y + 1];
+        }
+        // it must have enough space for a ship horizontally or vertically,
+        // so logically this should not happen, the function should return earlier
+        console.error('can not find a valid next move with \nposition: ', position, '\nsize: ', shipSize);
+        return null;
+    };
+    GamePage.prototype._nextMoveFromPartialShip = function (ship) {
+        var head = ship[0];
+        var tail = ship[1];
+        // horizontal ship
+        if (head[0] === tail[0]) {
+            // sort ship
+            ship = ship.sort(function (a, b) {
+                return a[1] - b[1];
+            });
+            // the real head and tail
+            head = ship[0];
+            tail = ship[ship.length - 1];
+            if (this._validateOpponentMove([head[0], head[1] - 1], head)) {
+                return [head[0], head[1] - 1];
+            }
+            else {
+                return [tail[0], tail[1] + 1];
+            }
+        }
+        // vertical ship
+        if (head[1] === tail[1]) {
+            ship = ship.sort(function (a, b) {
+                return a[0] - b[0];
+            });
+            // the real head and tail
+            head = ship[0];
+            tail = ship[ship.length - 1];
+            if (this._validateOpponentMove([head[0] - 1, head[1]], head)) {
+                return [head[0] - 1, head[1]];
+            }
+            else {
+                return [tail[0] + 1, tail[1]];
+            }
+        }
+        // logically it will never comes here, there should be a valid next move since the ship is not sunk
+        console.error('can not find a valid next move with \nship: ', ship);
+        return null;
+    };
+    /**
+     * Check if this move is valid
+     * check if this position is a neighbour of an existing ship
+     *
+     * @param position The move position
+     * @param validNeighbour The neighbour that is part of the same ship with this position
+     */
+    GamePage.prototype._validateOpponentMove = function (position, validNeighbour) {
+        var _this = this;
+        if (!this._validatePosition(position)) {
+            return false;
+        }
         if (this.myBoardStatus[position[0]][position[1]] !== 'unknown') {
             return false;
         }
-        return true;
+        // use smart check to validate this position
+        var valid = true;
+        var x = position[0], y = position[1];
+        [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(function (p) {
+            if (validNeighbour !== undefined && p[0] === validNeighbour[0] && p[1] === validNeighbour[1]) {
+                // this is the valid neighbour
+                return;
+            }
+            if (_this.myBoardStatus[p[0]] !== undefined &&
+                _this.myBoardStatus[p[0]][p[1]] !== undefined &&
+                _this.myBoardStatus[p[0]][p[1]] === 'correct') {
+                // this position is a neighbour of a ship
+                valid = false;
+            }
+        });
+        return valid;
     };
     GamePage.prototype._checkOpponentBoard = function () {
         for (var i = 0; i < this.ships.length; i++) {
@@ -1537,38 +1719,7 @@ var GamePage = /** @class */ (function () {
      */
     GamePage.prototype._checkSetUpStatus = function () {
         var _this = this;
-        // array of ships positions
-        var ships = [];
-        // temporary stack used to group positions to ships
-        var tmpStack = [];
-        // the positions that has already been checked(labeled - in the algorithm)
-        var checkedPositions = [];
-        this.markedPositions.forEach(function (position) {
-            if (_this._positionIncludes(checkedPositions, position)) {
-                return;
-            }
-            var ship = [];
-            tmpStack.push(position);
-            checkedPositions.push(position);
-            ship.push(position);
-            // keep checking neighbours of positions inside the stack until stack is empty
-            while (tmpStack[0]) {
-                var tmpPosition = tmpStack.pop();
-                var x = tmpPosition[0], y = tmpPosition[1];
-                // check if the neighbour of this position is marked
-                // if so, they belongs to the same ship
-                // push it to the stack
-                [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(function (neighbour) {
-                    if (_this._positionIncludes(_this.markedPositions, neighbour) &&
-                        !_this._positionIncludes(checkedPositions, neighbour)) {
-                        tmpStack.push(neighbour);
-                        checkedPositions.push(neighbour);
-                        ship.push(neighbour);
-                    }
-                });
-            }
-            ships.push(ship);
-        });
+        var ships = this._getShipsFromPositions(this.markedPositions);
         // now marked positions on the board are grouped as "ships"
         // need to validate those ships
         var validShips = [];
@@ -1606,35 +1757,88 @@ var GamePage = /** @class */ (function () {
         if (!this.ships.find(function (v) {
             return !v.done;
         }) && validShips.length === this.ships.length) {
-            this.myShips = validShips.sort(function (a, b) {
-                return b.length - a.length;
-            });
+            this.myShips = validShips;
             this.readyToStart = true;
         }
     };
     /**
-     * Create the AI's game board with ships
+     * Group positions into ships (regard positions that are connected as a ship)
+     * @param positions [Positions array]
      */
-    GamePage.prototype._createAIBoard = function () {
+    GamePage.prototype._getShipsFromPositions = function (positions) {
         var _this = this;
+        // array of ships positions
+        var ships = [];
+        // temporary stack used to group positions to ships
+        var tmpStack = [];
+        // the positions that has already been checked(labeled - in the algorithm)
+        var checkedPositions = [];
+        positions.forEach(function (position) {
+            if (_this._positionIncludes(checkedPositions, position)) {
+                return;
+            }
+            var ship = [];
+            tmpStack.push(position);
+            checkedPositions.push(position);
+            ship.push(position);
+            // keep checking neighbours of positions inside the stack until stack is empty
+            while (tmpStack[0]) {
+                var tmpPosition = tmpStack.pop();
+                var x = tmpPosition[0], y = tmpPosition[1];
+                // check if the neighbour of this position is marked
+                // if so, they belongs to the same ship
+                // push it to the stack
+                [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(function (neighbour) {
+                    if (_this._positionIncludes(positions, neighbour) &&
+                        !_this._positionIncludes(checkedPositions, neighbour)) {
+                        tmpStack.push(neighbour);
+                        checkedPositions.push(neighbour);
+                        ship.push(neighbour);
+                    }
+                });
+            }
+            ships.push(ship);
+        });
+        // sort ship by length descending
+        ships = ships.sort(function (a, b) {
+            return b.length - a.length;
+        });
+        return ships;
+    };
+    /**
+     * Automatically set up the game board with ships
+     * @param myBoard If it is used to set up my board, or AI's board
+     */
+    GamePage.prototype._autoSetupBoard = function (myBoard) {
+        var _this = this;
+        if (myBoard === void 0) { myBoard = false; }
         this.ships.forEach(function (ship) {
-            var valid = false;
-            var forceEnd = false;
-            // in case it goes to infinte loop
-            setTimeout(function () {
-                forceEnd = true;
-            }, 5000);
-            while (!valid && !forceEnd) {
-                valid = _this._validateShip(ship.size, _this._randomPosition(), _this._randomBoolean());
+            // try maximum
+            for (var i = 0; i < 1000; i++) {
+                if (_this._validateShip(ship.size, _this._randomPosition(), _this._randomBoolean(), myBoard)) {
+                    break;
+                }
             }
         });
     };
-    GamePage.prototype._validateShip = function (size, start, isVertical) {
+    /**
+     * Check if this random ship is valid, if so, push this ship to the ships array, and mark the positions on the board as true
+     * @param size       Size of this ship
+     * @param start      Start position of this ship
+     * @param isHorizontal If this ship is horizontal
+     * @param myBoard    Whether this is for my board or AI's board
+     */
+    GamePage.prototype._validateShip = function (size, start, isHorizontal, myBoard) {
         var _this = this;
+        if (myBoard === void 0) { myBoard = false; }
+        var shipsPosition = this.opponentShipsPosition;
+        if (myBoard) {
+            shipsPosition = this.myShipsPosition;
+        }
         var ship = [];
         var x = start[0], y = start[1];
         var end = [start[0] + size - 1, start[1]];
-        if (isVertical) {
+        if (isHorizontal) {
             end = [start[0], start[1] + size - 1];
         }
         // ship body should be inside the board
@@ -1644,7 +1848,7 @@ var GamePage = /** @class */ (function () {
         // check if the ship body and ship surrounded positions are taken
         for (var i = -1; i < size + 1; i++) {
             var position = [x + i, y];
-            if (isVertical) {
+            if (isHorizontal) {
                 position = [x, y + i];
             }
             // don't need to check the position outside of the board
@@ -1652,7 +1856,7 @@ var GamePage = /** @class */ (function () {
             if (!this._validatePosition(position)) {
                 continue;
             }
-            if (this.opponentShipsPosition[position[0]][position[1]]) {
+            if (shipsPosition[position[0]][position[1]]) {
                 return false;
             }
             // don't need to check left(top)/right(bottom) for i = -1 and i = size
@@ -1664,25 +1868,35 @@ var GamePage = /** @class */ (function () {
             var left = [x + i, y - 1];
             // right or bottom
             var right = [x + i, y + 1];
-            if (isVertical) {
+            if (isHorizontal) {
                 left = [x - 1, y + i];
                 right = [x + 1, y + i];
             }
             if (this._validatePosition(left)) {
-                if (this.opponentShipsPosition[left[0]][left[1]]) {
+                if (shipsPosition[left[0]][left[1]]) {
                     return false;
                 }
             }
             if (this._validatePosition(right)) {
-                if (this.opponentShipsPosition[right[0]][right[1]]) {
+                if (shipsPosition[right[0]][right[1]]) {
                     return false;
                 }
             }
             ship.push(position);
         }
-        this.opponentShips.push(ship);
+        if (myBoard) {
+            this.myShips.push(ship);
+        }
+        else {
+            this.opponentShips.push(ship);
+        }
         ship.forEach(function (position) {
-            _this.opponentShipsPosition[position[0]][position[1]] = true;
+            if (myBoard) {
+                _this.myShipsPosition[position[0]][position[1]] = true;
+            }
+            else {
+                _this.opponentShipsPosition[position[0]][position[1]] = true;
+            }
         });
         return true;
     };
@@ -1698,8 +1912,14 @@ var GamePage = /** @class */ (function () {
     GamePage.prototype._randomBoolean = function () {
         return Math.random() < 0.5;
     };
+    /**
+     * Validate if this position is valid
+     *
+     * @param position  The position that we are validating
+     */
     GamePage.prototype._validatePosition = function (position) {
-        if (position[0] < 0 || position[0] > 9 || position[1] < 0 || position[1] > 9) {
+        var x = position[0], y = position[1];
+        if (x < 0 || x > 9 || y < 0 || y > 9) {
             return false;
         }
         return true;
@@ -1720,7 +1940,7 @@ var GamePage = /** @class */ (function () {
     };
     GamePage.prototype.test = function () {
         var _this = this;
-        this._createAIBoard();
+        this._autoSetupBoard();
         this.opponentShips.forEach(function (ship) {
             ship.forEach(function (position) {
                 _this.myBoardStatus[position[0]][position[1]] = 'correct';
