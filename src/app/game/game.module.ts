@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 
 import { BoardModule } from '@app/board/board.module';
 import { GamePage } from './game.page';
+import { GameService } from './game.service';
 
 @NgModule({
   imports: [
@@ -16,6 +17,9 @@ import { GamePage } from './game.page';
     ]),
     BoardModule
   ],
-  declarations: [GamePage]
+  declarations: [GamePage],
+  providers: [
+    GameService
+  ]
 })
 export class GameModule {}

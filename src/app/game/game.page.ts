@@ -1,8 +1,6 @@
 import { Component } from '@angular/core';
+import { Position, Ship, ShipsPosition, BoardStatus, GameService } from './game.service';
 
-// Position = [x, y]
-type Position = Array<number>;
-type Ship = Array<Position>;
 
 @Component({
   selector: 'game',
@@ -15,8 +13,8 @@ export class GamePage {
   myTurn = true;
   winMsg = '';
   // ship positions on the board
-  myShipsPosition: Array<Array<boolean>>;
-  opponentShipsPosition: Array<Array<boolean>>;
+  myShipsPosition: ShipsPosition;
+  opponentShipsPosition: ShipsPosition;
   // These array only contain ship positions
   myShips: Array<Ship>;
   opponentShips: Array<Ship>;
@@ -26,38 +24,18 @@ export class GamePage {
   // 'correct' -> correct shoot
   // 'wrong' -> incorrect shoot
   // 'unknown' -> hasn't been shoot yet
-  myBoardStatus: Array<Array<string>>;
-  opponentBoardStatus: Array<Array<string>>;
+  myBoardStatus: BoardStatus;
+  opponentBoardStatus: BoardStatus;
   readyToStart = false;
-  ships = [
-    {
-      name: 'Carrier',
-      size: 5,
-      done: false
-    },
-    {
-      name: 'Battleship',
-      size: 4,
-      done: false
-    },
-    {
-      name: 'Cruiser',
-      size: 3,
-      done: false
-    },
-    {
-      name: 'Submarine',
-      size: 3,
-      done: false
-    },
-    {
-      name: 'Destroyer',
-      size: 2,
-      done: false
-    }
-  ];
+  ships: Array<{
+    name: string;
+    size: number;
+    done: boolean;
+  }>;
 
-  constructor() {
+  constructor(
+    private gameService: GameService
+  ) {
     this._initialise();
   }
 
@@ -73,7 +51,8 @@ export class GamePage {
     this.myBoardStatus = [];
     this.opponentBoardStatus = [];
     this.readyToStart = false;
-    this.ships = this.ships.map(ship => {
+    this.ships = this.gameService.ships;
+    this.gameService.ships = this.gameService.ships.map(ship => {
       ship.done = false;
       return ship;
     });
@@ -144,7 +123,9 @@ export class GamePage {
    */
   autoSetup() {
     this._initialise();
-    this._autoSetupBoard(true);
+    let setUp = this.gameService.autoSetupBoard(this.myShips, this.myShipsPosition);
+    this.myShips = setUp.ships;
+    this.myShipsPosition = setUp.shipsPosition;
     // display board status
     this.myBoardStatus = this.myBoardStatus.map((row, x) => {
       return row.map((column, y) => {
@@ -158,7 +139,9 @@ export class GamePage {
    * Start the game after setting up my board
    */
   start() {
-    this._autoSetupBoard();
+    let setUp = this.gameService.autoSetupBoard(this.opponentShips, this.opponentShipsPosition);
+    this.opponentShips = setUp.ships;
+    this.opponentShipsPosition = setUp.shipsPosition;
     // initialise my board
     this.myBoardStatus = this.myBoardStatus.map(row => {
       return row.map(column => {
@@ -206,7 +189,7 @@ export class GamePage {
       // pick a random position if there's no smarter move
       // try maximum 1000 times
       for (let i = 0; i < 1000; i++) {
-        movePosition = this._randomPosition();
+        movePosition = this.gameService.randomPosition();
         if (this._validateOpponentMove(movePosition)) {
           break;
         }
@@ -230,13 +213,13 @@ export class GamePage {
       });
     });
     // get "ships"(may not be a full ship) from marked positions
-    const ships = this._getShipsFromPositions(markedPositions);
+    const ships = this.gameService.getShipsFromPositions(markedPositions);
     // AI will finish this ship first
     let targetShip: Ship;
     ships.forEach(ship => {
       // find which ship these positions belong to
       const correctShip = this.myShips.find(eachShip => {
-        return this._positionIncludes(eachShip, ship[0]);
+        return this.gameService.positionIncludes(eachShip, ship[0]);
       });
       if (ship.length === correctShip.length) {
         // this ship is finished
@@ -250,9 +233,9 @@ export class GamePage {
     }
     // get the size of the target ship that is not sunk
     let targetShipSize = 0;
-    for (let i = this.ships.length - 1; i >= 0; i--) {
-      if (!this.isShipSunk('me', i) && this.ships[i].size > targetShip.length) {
-        targetShipSize = this.ships[i].size;
+    for (let i = this.gameService.ships.length - 1; i >= 0; i--) {
+      if (!this.isShipSunk('me', i) && this.gameService.ships[i].size > targetShip.length) {
+        targetShipSize = this.gameService.ships[i].size;
         break;
       }
     }
@@ -367,7 +350,7 @@ export class GamePage {
    * @param validNeighbour The neighbour that is part of the same ship with this position
    */
   private _validateOpponentMove(position: Position, validNeighbour?: Position) {
-    if (!this._validatePosition(position)) {
+    if (!this.gameService.validatePosition(position)) {
       return false;
     }
     if (this.myBoardStatus[position[0]][position[1]] !== 'unknown') {
@@ -392,7 +375,7 @@ export class GamePage {
   }
 
   private _checkOpponentBoard() {
-    for (let i = 0; i < this.ships.length; i++) {
+    for (let i = 0; i < this.gameService.ships.length; i++) {
       if (!this.isShipSunk('opponent', i)) {
         return;
       }
@@ -402,7 +385,7 @@ export class GamePage {
   }
 
   private _checkMyBoard() {
-    for (let i = 0; i < this.ships.length; i++) {
+    for (let i = 0; i < this.gameService.ships.length; i++) {
       if (!this.isShipSunk('me', i)) {
         return;
       }
@@ -441,7 +424,7 @@ export class GamePage {
    * (https://en.wikipedia.org/wiki/Connected-component_labeling)
    */
   private _checkSetUpStatus() {
-    const ships = this._getShipsFromPositions(this.markedPositions);
+    const ships = this.gameService.getShipsFromPositions(this.markedPositions);
     // now marked positions on the board are grouped as "ships"
     // need to validate those ships
     const validShips: Array<Ship> = [];
@@ -462,211 +445,26 @@ export class GamePage {
     });
     // now check which ship has been set up already
     // initialise all ships' done status to false
-    this.ships = this.ships.map(v => {
+    this.gameService.ships = this.gameService.ships.map(v => {
       v.done = false;
       return v;
     });
     // initialise ready to start as false
     this.readyToStart = false;
     validShips.forEach(ship => {
-      const index = this.ships.findIndex(currentShip => {
+      const index = this.gameService.ships.findIndex(currentShip => {
         return currentShip.size === ship.length && !currentShip.done;
       });
       if (index !== -1) {
-        this.ships[index].done = true;
+        this.gameService.ships[index].done = true;
       }
     });
-    if (!this.ships.find(v => {
+    if (!this.gameService.ships.find(v => {
       return !v.done;
-    }) && validShips.length === this.ships.length) {
+    }) && validShips.length === this.gameService.ships.length) {
       this.myShips = validShips;
       this.readyToStart = true;
     }
   }
 
-  /**
-   * Group positions into ships (regard positions that are connected as a ship)
-   * @param positions [Positions array]
-   */
-  private _getShipsFromPositions(positions: Array<Position>) {
-    // array of ships positions
-    let ships: Array<Ship> = [];
-    // temporary stack used to group positions to ships
-    const tmpStack: Array<Position> = [];
-    // the positions that has already been checked(labeled - in the algorithm)
-    const checkedPositions: Array<Position> = [];
-    positions.forEach(position => {
-      if (this._positionIncludes(checkedPositions, position)) {
-        return ;
-      }
-      const ship: Ship = [];
-      tmpStack.push(position);
-      checkedPositions.push(position);
-      ship.push(position);
-      // keep checking neighbours of positions inside the stack until stack is empty
-      while (tmpStack[0]) {
-        const tmpPosition = tmpStack.pop();
-        const [x, y] = tmpPosition;
-        // check if the neighbour of this position is marked
-        // if so, they belongs to the same ship
-        // push it to the stack
-        [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].forEach(neighbour => {
-          if (this._positionIncludes(positions, neighbour) &&
-            !this._positionIncludes(checkedPositions, neighbour)) {
-            tmpStack.push(neighbour);
-            checkedPositions.push(neighbour);
-            ship.push(neighbour);
-          }
-        });
-      }
-      ships.push(ship);
-    });
-    // sort ship by length descending
-    ships = ships.sort((a, b) => {
-      return b.length - a.length;
-    });
-    return ships;
-  }
-
-  /**
-   * Automatically set up the game board with ships
-   * @param myBoard If it is used to set up my board, or AI's board
-   */
-  private _autoSetupBoard(myBoard = false) {
-    this.ships.forEach(ship => {
-      // try maximum
-      for (let i = 0; i < 1000; i ++) {
-        if (this._validateShip(ship.size, this._randomPosition(), this._randomBoolean(), myBoard)) {
-          break;
-        }
-      }
-    });
-  }
-
-  /**
-   * Check if this random ship is valid, if so, push this ship to the ships array, and mark the positions on the board as true
-   * @param size       Size of this ship
-   * @param start      Start position of this ship
-   * @param isHorizontal If this ship is horizontal
-   * @param myBoard    Whether this is for my board or AI's board
-   */
-  private _validateShip(size: number, start: Position, isHorizontal: boolean, myBoard = false) {
-    let shipsPosition = this.opponentShipsPosition;
-    if (myBoard) {
-      shipsPosition = this.myShipsPosition;
-    }
-    const ship: Ship = [];
-    const [x, y] = start;
-    let end: Position = [start[0] + size - 1, start[1]];
-    if (isHorizontal) {
-      end = [start[0], start[1] + size - 1];
-    }
-    // ship body should be inside the board
-    if (!this._validatePosition(end)) {
-      return false;
-    }
-    // check if the ship body and ship surrounded positions are taken
-    for (let i = -1; i < size + 1; i++) {
-      let position = [x + i, y];
-      if (isHorizontal) {
-        position = [x, y + i];
-      }
-      // don't need to check the position outside of the board
-      // this will only happen for the position i = -1 / i = size
-      if (!this._validatePosition(position)) {
-        continue;
-      }
-      if (shipsPosition[position[0]][position[1]]) {
-        return false;
-      }
-      // don't need to check left(top)/right(bottom) for i = -1 and i = size
-      if (i < 0 || i >= size) {
-        continue;
-      }
-      // check the left/top and right/bottom of this position
-      // left or top
-      let left = [x + i, y - 1];
-      // right or bottom
-      let right = [x + i, y + 1];
-      if (isHorizontal) {
-        left = [x - 1, y + i];
-        right = [x + 1, y + i];
-      }
-      if (this._validatePosition(left)) {
-        if (shipsPosition[left[0]][left[1]]) {
-          return false;
-        }
-      }
-      if (this._validatePosition(right)) {
-        if (shipsPosition[right[0]][right[1]]) {
-          return false;
-        }
-      }
-      ship.push(position);
-    }
-    if (myBoard) {
-      this.myShips.push(ship);
-    } else {
-      this.opponentShips.push(ship);
-    }
-    ship.forEach(position => {
-      if (myBoard) {
-        this.myShipsPosition[position[0]][position[1]] = true;
-      } else {
-        this.opponentShipsPosition[position[0]][position[1]] = true;
-      }
-    });
-    return true;
-  }
-
-  /**
-   * Get a random position
-   */
-  private _randomPosition() {
-    return [Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)];
-  }
-
-  /**
-   * A random boolean choice
-   */
-  private _randomBoolean() {
-    return Math.random() < 0.5;
-  }
-
-  /**
-   * Validate if this position is valid
-   *
-   * @param position  The position that we are validating
-   */
-  private _validatePosition(position: Position) {
-    const [x, y] = position;
-    if (x < 0 || x > 9 || y < 0 || y > 9) {
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Check if an position array includes the position passed in
-   * @param positionArray [The position array]
-   * @param position      [The position to check]
-   */
-  private _positionIncludes(positionArray: Array<Position>, position: Position) {
-    let result = false;
-    positionArray.forEach(p => {
-      if (p[0] === position[0] && p[1] === position[1]) {
-        result = true;
-      }
-    });
-    return result;
-  }
-
-  test() {
-    this._autoSetupBoard();
-    this.opponentShips.forEach(ship => {
-      ship.forEach(position => {
-        this.myBoardStatus[position[0]][position[1]] = 'correct';
-      });
-    });
-  }
 }
