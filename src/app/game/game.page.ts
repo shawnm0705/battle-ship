@@ -43,35 +43,15 @@ export class GamePage {
     this.state = 'setting';
     this.gameOver = false;
     this.myTurn = true;
-    this.myShipsPosition = [];
-    this.opponentShipsPosition = [];
+    this.myShipsPosition = this.gameService.initialiseBoard(false);
+    this.opponentShipsPosition = this.gameService.initialiseBoard(false);
     this.myShips = [];
     this.opponentShips = [];
     this.markedPositions = [];
-    this.myBoardStatus = [];
-    this.opponentBoardStatus = [];
+    this.myBoardStatus = this.gameService.initialiseBoard('unknown');
+    this.opponentBoardStatus = this.gameService.initialiseBoard('unknown');
     this.readyToStart = false;
-    this.ships = this.gameService.ships;
-    this.gameService.ships = this.gameService.ships.map(ship => {
-      ship.done = false;
-      return ship;
-    });
-    for (let i = 0; i < 10; i ++) {
-      const myShipsInit = [];
-      const oppnentShipsInit = [];
-      const myStatusInit = [];
-      const oppnentStatusInit = [];
-      for (let j = 0; j < 10; j ++) {
-        myShipsInit.push(false);
-        oppnentShipsInit.push(false);
-        myStatusInit.push('unknown');
-        oppnentStatusInit.push('unknown');
-      }
-      this.myShipsPosition.push(myShipsInit);
-      this.opponentShipsPosition.push(oppnentShipsInit);
-      this.myBoardStatus.push(myStatusInit);
-      this.opponentBoardStatus.push(oppnentStatusInit);
-    }
+    this.ships = this.gameService.getShips();
   }
 
   /**
@@ -123,7 +103,7 @@ export class GamePage {
    */
   autoSetup() {
     this._initialise();
-    let setUp = this.gameService.autoSetupBoard(this.myShips, this.myShipsPosition);
+    let setUp = this.gameService.autoSetupBoard();
     this.myShips = setUp.ships;
     this.myShipsPosition = setUp.shipsPosition;
     // display board status
@@ -139,7 +119,7 @@ export class GamePage {
    * Start the game after setting up my board
    */
   start() {
-    let setUp = this.gameService.autoSetupBoard(this.opponentShips, this.opponentShipsPosition);
+    let setUp = this.gameService.autoSetupBoard();
     this.opponentShips = setUp.ships;
     this.opponentShipsPosition = setUp.shipsPosition;
     // initialise my board
@@ -233,9 +213,9 @@ export class GamePage {
     }
     // get the size of the target ship that is not sunk
     let targetShipSize = 0;
-    for (let i = this.gameService.ships.length - 1; i >= 0; i--) {
-      if (!this.isShipSunk('me', i) && this.gameService.ships[i].size > targetShip.length) {
-        targetShipSize = this.gameService.ships[i].size;
+    for (let i = this.ships.length - 1; i >= 0; i--) {
+      if (!this.isShipSunk('me', i) && this.ships[i].size > targetShip.length) {
+        targetShipSize = this.ships[i].size;
         break;
       }
     }
@@ -375,7 +355,7 @@ export class GamePage {
   }
 
   private _checkOpponentBoard() {
-    for (let i = 0; i < this.gameService.ships.length; i++) {
+    for (let i = 0; i < this.ships.length; i++) {
       if (!this.isShipSunk('opponent', i)) {
         return;
       }
@@ -385,7 +365,7 @@ export class GamePage {
   }
 
   private _checkMyBoard() {
-    for (let i = 0; i < this.gameService.ships.length; i++) {
+    for (let i = 0; i < this.ships.length; i++) {
       if (!this.isShipSunk('me', i)) {
         return;
       }
@@ -445,23 +425,23 @@ export class GamePage {
     });
     // now check which ship has been set up already
     // initialise all ships' done status to false
-    this.gameService.ships = this.gameService.ships.map(v => {
+    this.ships = this.ships.map(v => {
       v.done = false;
       return v;
     });
     // initialise ready to start as false
     this.readyToStart = false;
     validShips.forEach(ship => {
-      const index = this.gameService.ships.findIndex(currentShip => {
+      const index = this.ships.findIndex(currentShip => {
         return currentShip.size === ship.length && !currentShip.done;
       });
       if (index !== -1) {
-        this.gameService.ships[index].done = true;
+        this.ships[index].done = true;
       }
     });
-    if (!this.gameService.ships.find(v => {
+    if (!this.ships.find(v => {
       return !v.done;
-    }) && validShips.length === this.gameService.ships.length) {
+    }) && validShips.length === this.ships.length) {
       this.myShips = validShips;
       this.readyToStart = true;
     }

@@ -10,7 +10,7 @@ export type BoardStatus = Array<Array<string>>;
   providedIn: 'root'
 })
 export class GameService {
-  ships = [
+  private ships = [
     {
       name: 'Carrier',
       size: 5,
@@ -39,6 +39,10 @@ export class GameService {
   ];
 
   constructor() { }
+
+  getShips() {
+    return this.ships;
+  }
 
   /**
    * Group positions into ships (regard positions that are connected as a ship)
@@ -89,7 +93,9 @@ export class GameService {
    * @param ships           Ships array
    * @param shipsPosition   Ships position array
    */
-  autoSetupBoard(ships: Array<Ship>, shipsPosition: ShipsPosition) {
+  autoSetupBoard() {
+    let ships = [];
+    let shipsPosition = this.initialiseBoard(false);
     this.ships.forEach(ship => {
       // try maximum
       for (let i = 0; i < 1000; i ++) {
@@ -105,6 +111,23 @@ export class GameService {
       ships: ships,
       shipsPosition: shipsPosition
     };
+  }
+
+  /**
+   * Create a 10 * 10 two dimensional array of given value
+   * @param value   the value of each cell
+   * @return the two dimensional array
+   */
+  initialiseBoard(value) {
+    const board = [];
+    for (let i = 0; i < 10; i ++) {
+      const row = [];
+      for (let j = 0; j < 10; j ++) {
+        row.push(value);
+      }
+      board.push(row);
+    }
+    return board;
   }
 
   /**
