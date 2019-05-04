@@ -13,6 +13,11 @@ describe('GameService', () => {
     expect(gameService).toBeTruthy();
   });
 
+  it('autoSetupBoard() works', () => {
+    const result = gameService.autoSetupBoard();
+    expect(result).toBeTruthy();
+  });
+
   it(`validateShip() works`, () => {
     let testCases = [
       {
